@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Knot Forum API</title>
+    <style>
+      :root {
+        --bg: #f6f7fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --primary: #0f766e;
+        --border: #e5e7eb;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(
+          140deg,
+          #ecfeff 0%,
+          var(--bg) 55%,
+          #f8fafc 100%
+        );
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 48px auto;
+        padding: 0 16px;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+      }
+
+      h1 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: var(--primary);
+        font-size: 2rem;
+      }
+
+      h2 {
+        margin: 22px 0 10px;
+        font-size: 1.15rem;
+      }
+
+      p {
+        line-height: 1.6;
+        margin: 8px 0;
+      }
+
+      ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+      }
+
+      li {
+        margin: 6px 0;
+      }
+
+      code {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-size: 0.95em;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h1>Knot Forum API</h1>
+        <p class="muted">
+          A small, authenticated text-forum backend for posts, comments, and
+          likes.
+        </p>
+
+        <h2>What This API Supports</h2>
+        <ul>
+          <li>User authentication with password login.</li>
+          <li>Create and view forum posts and comments.</li>
+          <li>
+            Like posts (one like per user, and users cannot like their own
+            posts).
+          </li>
+          <li>Moderator flagging for misleading or false information.</li>
+          <li>
+            AI-enhanced forum capability (based on the selected extension
+            option).
+          </li>
+        </ul>
+
+        <h2>Quick Start</h2>
+        <p>
+          Use the API from your frontend or tools like Postman. Anonymous users
+          can view public content, while posting, commenting, and liking require
+          authentication.
+        </p>
+
+        <h2>Example Endpoint</h2>
+        <p><code>GET /api/hello/</code> returns a basic API health message.</p>
+
+        <p class="muted">
+          If you can see this page, the backend is running and template
+          rendering is configured correctly.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
