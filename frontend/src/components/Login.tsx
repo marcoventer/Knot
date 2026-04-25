@@ -6,24 +6,29 @@
 import { useState, FormEvent } from "react";
 import { motion } from "motion/react";
 import { Link, Lock, User, ArrowRight } from "lucide-react";
-import { User as UserType } from "../types";
 
 interface LoginProps {
-  onLogin: (user: UserType) => void;
+  onLogin: (username: string, password: string) => Promise<void>;
   onShowRegister: () => void;
 }
 
 export default function Login({ onLogin, onShowRegister }: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (username.trim()) {
-      onLogin({
-        username: username,
-        isStaff: username.toLowerCase().includes("staff"), // Keep this for backward compatibility with mock "Staff" login if needed
-      });
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      await onLogin(username, password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to sign in.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,13 +103,16 @@ export default function Login({ onLogin, onShowRegister }: LoginProps) {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl py-4 flex items-center justify-center gap-2 text-white font-bold transition-all hover:gap-4 active:scale-95 group overflow-hidden relative"
             >
               <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              Sign In
+              {isSubmitting ? "Signing In..." : "Sign In"}
               <ArrowRight size={18} />
             </button>
           </form>
+
+          {error && <p className="mt-4 text-xs text-red-400">{error}</p>}
 
           <div className="mt-8 pt-6 border-t border-white/5 flex flex-col gap-4 text-center">
             <button

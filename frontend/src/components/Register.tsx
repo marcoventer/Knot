@@ -6,10 +6,13 @@
 import { useState, FormEvent } from "react";
 import { motion } from "motion/react";
 import { Link, Lock, User, ArrowRight, UserPlus } from "lucide-react";
-import { User as UserType } from "../types";
 
 interface RegisterProps {
-  onRegister: (user: UserType) => void;
+  onRegister: (
+    username: string,
+    password: string,
+    isStaff: boolean,
+  ) => Promise<void>;
   onBackToLogin: () => void;
 }
 
@@ -18,18 +21,33 @@ export default function Register({ onRegister, onBackToLogin }: RegisterProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isStaff, setIsStaff] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (
-      username.trim() &&
-      password === confirmPassword &&
-      password.length >= 6
-    ) {
-      onRegister({
-        username: username,
-        isStaff: isStaff,
-      });
+    setError("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await onRegister(username, password, isStaff);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Unable to create account.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -151,6 +169,7 @@ export default function Register({ onRegister, onBackToLogin }: RegisterProps) {
             <button
               type="submit"
               disabled={
+                isSubmitting ||
                 !username.trim() ||
                 password.length < 6 ||
                 password !== confirmPassword
@@ -159,9 +178,11 @@ export default function Register({ onRegister, onBackToLogin }: RegisterProps) {
             >
               <div className="absolute inset-0 bg-indigo-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
               <UserPlus size={18} />
-              Create Account
+              {isSubmitting ? "Creating Account..." : "Create Account"}
             </button>
           </form>
+
+          {error && <p className="mt-4 text-xs text-red-400">{error}</p>}
 
           <div className="mt-8 pt-6 border-t border-white/5 flex flex-col gap-4 text-center">
             <button

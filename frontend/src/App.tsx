@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   User as UserIcon,
@@ -24,88 +24,23 @@ import PostCard from "./components/PostCard";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import { Post, User, PostCategory } from "./types";
-
-const MOCK_POSTS: Post[] = [
-  {
-    id: "1",
-    author: "TechGeek",
-    content:
-      "The new quantum computing breakthrough is absolutely insane! The way it handles entanglement at room temperature is going to change the hardware world forever.",
-    timestamp: "2 hours ago",
-    category: "Tech",
-    likes: 124,
-    is_misleading: false,
-    comments: [
-      {
-        id: "c1",
-        author: "QuantumLover",
-        content:
-          "Actually, the paper says it was near-room temperature, still super cool though!",
-        timestamp: "1 hour ago",
-      },
-      {
-        id: "c2",
-        author: "HardwarePro",
-        content:
-          "Cant wait to see the first consumer-grade cooling units for this.",
-        timestamp: "45 mins ago",
-      },
-    ],
-  },
-  {
-    id: "2",
-    author: "TruthSeeker",
-    content:
-      "URGENT: Studies show that eating magnets actually improves your internal compass and helps you navigate cities without GPS. Just eat one small magnet every morning.",
-    timestamp: "5 hours ago",
-    category: "General",
-    likes: 8,
-    is_misleading: true,
-    comments: [],
-  },
-  {
-    id: "3",
-    author: "NatureLover",
-    content:
-      "Caught this amazing sunset over the peak today. The orange and purple hues were absolutely breathtaking. We really need to protect these landscapes.",
-    timestamp: "1 day ago",
-    category: "Nature",
-    likes: 342,
-    is_misleading: false,
-    comments: [
-      {
-        id: "c3",
-        author: "EcoWarrior",
-        content: "Beautiful capture! Which trail was this?",
-        timestamp: "10 hours ago",
-      },
-    ],
-  },
-  {
-    id: "4",
-    author: "CodingNovice",
-    content:
-      "Why does my React component re-render 50 times when I just move my mouse? I using useEffect and nothing seems to work!",
-    timestamp: "12 hours ago",
-    category: "Q&A",
-    likes: 15,
-    is_misleading: false,
-    comments: [
-      {
-        id: "c4",
-        author: "ReactMaster",
-        content:
-          "Check your dependency array! You probably have a function defined inside the component body.",
-        timestamp: "11 hours ago",
-      },
-    ],
-  },
-];
+import {
+  addComment,
+  createPost,
+  fetchForumStats,
+  fetchCurrentUser,
+  fetchPosts,
+  likePost,
+  loginUser,
+  logoutUser,
+  setPostMisleading,
+  registerUser,
+} from "./api";
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<"login" | "register">("login");
-  const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [activeView, setActiveView] = useState<"feed" | "my-knots">("feed");
   const [selectedCategory, setSelectedCategory] = useState<
     PostCategory | "All"
@@ -115,6 +50,60 @@ export default function App() {
   const [newKnotContent, setNewKnotContent] = useState("");
   const [newKnotCategory, setNewKnotCategory] =
     useState<PostCategory>("General");
+  const [forumStats, setForumStats] = useState({
+    users: 0,
+    posts: 0,
+    likes: 0,
+    comments: 0,
+  });
+
+  const refreshForumStats = async () => {
+    try {
+      const stats = await fetchForumStats();
+      setForumStats(stats);
+    } catch {
+      setForumStats({ users: 0, posts: 0, likes: 0, comments: 0 });
+    }
+  };
+
+  useEffect(() => {
+    const loadSessionUser = async () => {
+      try {
+        const user = await fetchCurrentUser();
+        setCurrentUser(user);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+
+    const loadPosts = async () => {
+      try {
+        const apiPosts = await fetchPosts();
+        setPosts(apiPosts);
+      } catch {
+        setPosts([]);
+      }
+    };
+
+    void loadSessionUser();
+    void loadPosts();
+    void refreshForumStats();
+  }, []);
+
+  const handleLogin = async (username: string, password: string) => {
+    const backendUser = await loginUser({ username, password });
+    setCurrentUser(backendUser);
+  };
+
+  const handleRegister = async (
+    username: string,
+    password: string,
+    isStaff: boolean,
+  ) => {
+    const backendUser = await registerUser({ username, password, isStaff });
+    setCurrentUser(backendUser);
+    void refreshForumStats();
+  };
 
   // Filter posts based on active view, category, and search query
   const filteredPosts = posts.filter((post) => {
@@ -128,65 +117,102 @@ export default function App() {
     return matchesView && matchesCategory && matchesSearch;
   });
 
-  const handleLike = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, likes: p.likes + 1 } : p)),
-    );
+  const handleLike = async (postId: string) => {
+    if (!currentUser?.id) return;
+
+    try {
+      const updatedPost = await likePost(postId, currentUser.id);
+      setPosts((prev) =>
+        prev.map((post) => (post.id === postId ? updatedPost : post)),
+      );
+      void refreshForumStats();
+    } catch {
+      // Ignore transient API errors and keep the UI responsive.
+    }
   };
 
-  const handleFlag = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, is_misleading: true } : p)),
-    );
+  const handleFlag = async (postId: string) => {
+    try {
+      const updatedPost = await setPostMisleading(postId, true);
+      setPosts((prev) =>
+        prev.map((post) => (post.id === postId ? updatedPost : post)),
+      );
+      void refreshForumStats();
+    } catch {
+      // Ignore transient API errors and keep the UI responsive.
+    }
   };
 
-  const handleUnflag = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) => (p.id === postId ? { ...p, is_misleading: false } : p)),
-    );
+  const handleUnflag = async (postId: string) => {
+    try {
+      const updatedPost = await setPostMisleading(postId, false);
+      setPosts((prev) =>
+        prev.map((post) => (post.id === postId ? updatedPost : post)),
+      );
+      void refreshForumStats();
+    } catch {
+      // Ignore transient API errors and keep the UI responsive.
+    }
   };
 
-  const handleComment = (postId: string, content: string) => {
-    if (!currentUser) return;
+  const handleComment = async (postId: string, content: string) => {
+    if (!currentUser?.id) return;
 
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          const newComment = {
-            id: `c-${Math.random().toString(36).substr(2, 9)}`,
-            author: currentUser.username,
-            content,
-            timestamp: "Just now",
-          };
-          return { ...p, comments: [newComment, ...p.comments] };
-        }
-        return p;
-      }),
-    );
+    try {
+      await addComment(postId, currentUser.id, content);
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                comments: [
+                  {
+                    id: `pending-${Date.now()}`,
+                    author: currentUser.username,
+                    content,
+                    timestamp: "Just now",
+                  },
+                  ...post.comments,
+                ],
+              }
+            : post,
+        ),
+      );
+      void refreshForumStats();
+    } catch {
+      // Ignore transient API errors and keep the UI responsive.
+    }
   };
 
-  const handleCreatePost = () => {
-    if (!newKnotContent.trim() || !currentUser) return;
+  const handleCreatePost = async () => {
+    if (!newKnotContent.trim() || !currentUser?.id) return;
 
-    const newPost: Post = {
-      id: Math.random().toString(36).substr(2, 9),
-      author: currentUser.username,
-      content: newKnotContent,
-      timestamp: "Just now",
-      category: newKnotCategory,
-      likes: 0,
-      is_misleading: false,
-      comments: [],
-    };
+    try {
+      const createdPost = await createPost(
+        currentUser.id,
+        newKnotContent,
+        newKnotCategory,
+      );
+      setPosts((prev) => [createdPost, ...prev]);
+      void refreshForumStats();
+    } catch {
+      // Ignore transient API errors and keep the UI responsive.
+    }
 
-    setPosts([newPost, ...posts]);
     setNewKnotContent("");
     setIsNewKnotModalOpen(false);
   };
 
   const handleLogout = () => {
+    void logoutUser();
     setCurrentUser(null);
   };
+
+  const formatCompactCount = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
 
   if (!currentUser) {
     return (
@@ -194,12 +220,12 @@ export default function App() {
         <Background />
         {authView === "login" ? (
           <Login
-            onLogin={setCurrentUser}
+            onLogin={handleLogin}
             onShowRegister={() => setAuthView("register")}
           />
         ) : (
           <Register
-            onRegister={setCurrentUser}
+            onRegister={handleRegister}
             onBackToLogin={() => setAuthView("login")}
           />
         )}
@@ -472,7 +498,7 @@ export default function App() {
                   Users
                 </span>
                 <span className="text-xl font-black text-white italic">
-                  8,421
+                  {formatCompactCount(forumStats.users)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -480,7 +506,7 @@ export default function App() {
                   Knots
                 </span>
                 <span className="text-xl font-black text-white italic">
-                  14,284
+                  {formatCompactCount(forumStats.posts)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -488,7 +514,7 @@ export default function App() {
                   Likes
                 </span>
                 <span className="text-xl font-black text-white italic">
-                  1.2k
+                  {formatCompactCount(forumStats.likes)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -496,7 +522,7 @@ export default function App() {
                   Comments
                 </span>
                 <span className="text-xl font-black text-white italic">
-                  412
+                  {formatCompactCount(forumStats.comments)}
                 </span>
               </div>
             </div>
