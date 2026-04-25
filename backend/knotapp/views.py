@@ -7,12 +7,13 @@ from django.contrib.auth import (
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
     permission_classes,
 )
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from google import genai
 import os
@@ -32,6 +33,11 @@ BACKEND_TO_FRONTEND_CATEGORY = {
 FRONTEND_TO_BACKEND_CATEGORY = {
     label: code for code, label in BACKEND_TO_FRONTEND_CATEGORY.items()
 }
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return
 
 
 def categorize_post(post_title: str, post_content: str) -> str:
@@ -116,7 +122,6 @@ def auth_me(request):
 def auth_register(request):
     username = (request.data.get("username") or "").strip()
     password = request.data.get("password") or ""
-    is_staff = bool(request.data.get("is_staff", False))
 
     if not username:
         return Response({"detail": "username is required"}, status=400)
@@ -130,8 +135,6 @@ def auth_register(request):
     except IntegrityError:
         return Response({"detail": "username already exists"}, status=400)
 
-    user.is_staff = is_staff
-    user.save(update_fields=["is_staff"])
     django_login(request, user)
     return Response({"user": serialize_user(user)}, status=201)
 
@@ -187,9 +190,12 @@ def users_list(request):
 
 
 @api_view(["POST"])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@authentication_classes([CsrfExemptSessionAuthentication])
+@permission_classes([IsAuthenticated])
 def users_create(request):
+    if not request.user.is_staff:
+        return Response({"detail": "moderator access required"}, status=403)
+
     username = (request.data.get("username") or "").strip()
     if not username:
         return Response({"detail": "username is required"}, status=400)
@@ -202,7 +208,6 @@ def users_create(request):
 
 
 @api_view(["GET"])
-@authentication_classes([])
 @permission_classes([AllowAny])
 def posts_list(request):
     posts = (
@@ -210,81 +215,68 @@ def posts_list(request):
         .prefetch_related("comments__author", "post_likes")
         .order_by("-created_at")
     )
-    user_id_param = request.query_params.get("user_id")
-    viewer_id = (
-        int(user_id_param) if user_id_param and user_id_param.isdigit() else None
-    )
+    viewer_id = request.user.id if request.user.is_authenticated else None
     return Response([serialize_post(post, viewer_id) for post in posts])
 
 
 @api_view(["POST"])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@authentication_classes([CsrfExemptSessionAuthentication])
+@permission_classes([IsAuthenticated])
 def posts_create(request):
-    author_id = request.data.get("author_id")
     content = (request.data.get("content") or "").strip()
     post_title = (request.data.get("title") or "").strip()
 
-    if not author_id:
-        return Response({"detail": "author_id is required"}, status=400)
     if not content:
         return Response({"detail": "content is required"}, status=400)
 
     category_label = categorize_post(post_title=post_title, post_content=content)
     category_code = FRONTEND_TO_BACKEND_CATEGORY.get(category_label, "GENERAL")
 
-    author = get_object_or_404(User, pk=author_id)
     post = Post.objects.create(
-        author=author,
+        author=request.user,
         content=content,
         category=category_code,
     )
-    return Response(serialize_post(post), status=201)
+    return Response(serialize_post(post, request.user.id), status=201)
 
 
 @api_view(["POST"])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@authentication_classes([CsrfExemptSessionAuthentication])
+@permission_classes([IsAuthenticated])
 def post_comments(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    author_id = request.data.get("author_id")
     content = (request.data.get("content") or "").strip()
 
-    if not author_id:
-        return Response({"detail": "author_id is required"}, status=400)
     if not content:
         return Response({"detail": "content is required"}, status=400)
 
-    author = get_object_or_404(User, pk=author_id)
-    comment = Comment.objects.create(post=post, author=author, content=content)
+    comment = Comment.objects.create(post=post, author=request.user, content=content)
     return Response(serialize_comment(comment), status=201)
 
 
 @api_view(["POST"])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@authentication_classes([CsrfExemptSessionAuthentication])
+@permission_classes([IsAuthenticated])
 def post_like(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    author_id = request.data.get("author_id")
-
-    if not author_id:
-        return Response({"detail": "author_id is required"}, status=400)
-
-    user = get_object_or_404(User, pk=author_id)
+    user = request.user
     existing = Like.objects.filter(post=post, user=user).first()
     if existing:
         existing.delete()
     else:
         Like.objects.create(post=post, user=user)
-    return Response(serialize_post(post, int(author_id)))
+    return Response(serialize_post(post, request.user.id))
 
 
 @api_view(["POST"])
-@authentication_classes([])
-@permission_classes([AllowAny])
+@authentication_classes([CsrfExemptSessionAuthentication])
+@permission_classes([IsAuthenticated])
 def post_misleading(request, post_id):
+    if not request.user.is_staff:
+        return Response({"detail": "moderator access required"}, status=403)
+
     post = get_object_or_404(Post, pk=post_id)
     is_misleading = bool(request.data.get("is_misleading", False))
     post.is_misleading = is_misleading
     post.save(update_fields=["is_misleading"])
-    return Response(serialize_post(post))
+    return Response(serialize_post(post, request.user.id))

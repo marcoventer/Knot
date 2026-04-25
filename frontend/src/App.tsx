@@ -68,16 +68,14 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      let userId: number | undefined;
       try {
         const user = await fetchCurrentUser();
         setCurrentUser(user);
-        userId = user?.id;
       } catch {
         setCurrentUser(null);
       }
       try {
-        const apiPosts = await fetchPosts(userId);
+        const apiPosts = await fetchPosts();
         setPosts(apiPosts);
       } catch {
         setPosts([]);
@@ -92,21 +90,17 @@ export default function App() {
     const backendUser = await loginUser({ username, password });
     setCurrentUser(backendUser);
     try {
-      const apiPosts = await fetchPosts(backendUser.id);
+      const apiPosts = await fetchPosts();
       setPosts(apiPosts);
     } catch {}
   };
 
-  const handleRegister = async (
-    username: string,
-    password: string,
-    isStaff: boolean,
-  ) => {
-    const backendUser = await registerUser({ username, password, isStaff });
+  const handleRegister = async (username: string, password: string) => {
+    const backendUser = await registerUser({ username, password });
     setCurrentUser(backendUser);
     void refreshForumStats();
     try {
-      const apiPosts = await fetchPosts(backendUser.id);
+      const apiPosts = await fetchPosts();
       setPosts(apiPosts);
     } catch {}
   };
@@ -135,7 +129,7 @@ export default function App() {
     }
 
     try {
-      const updatedPost = await likePost(postId, currentUser.id);
+      const updatedPost = await likePost(postId);
       setPosts((prev) =>
         prev.map((post) => (post.id === postId ? updatedPost : post)),
       );
@@ -181,7 +175,7 @@ export default function App() {
     if (!currentUser?.id) return;
 
     try {
-      await addComment(postId, currentUser.id, content);
+      await addComment(postId, content);
       setPosts((prev) =>
         prev.map((post) =>
           post.id === postId
@@ -212,7 +206,7 @@ export default function App() {
     setIsCreatingPost(true);
 
     try {
-      const createdPost = await createPost(currentUser.id, newKnotContent);
+      const createdPost = await createPost(newKnotContent);
       setPosts((prev) => [createdPost, ...prev]);
       void refreshForumStats();
       setNewKnotContent("");

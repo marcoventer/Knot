@@ -115,14 +115,12 @@ export async function fetchCurrentUser() {
 export async function registerUser(input: {
   username: string;
   password: string;
-  isStaff: boolean;
 }) {
   const response = await requestJson<{ user: ApiUser }>("/auth/register/", {
     method: "POST",
     body: JSON.stringify({
       username: input.username,
       password: input.password,
-      is_staff: input.isStaff,
     }),
   });
 
@@ -147,9 +145,8 @@ export async function logoutUser() {
   });
 }
 
-export async function fetchPosts(userId?: number) {
-  const url = userId !== undefined ? `/posts/?user_id=${userId}` : "/posts/";
-  const posts = await requestJson<ApiPost[]>(url);
+export async function fetchPosts() {
+  const posts = await requestJson<ApiPost[]>("/posts/");
   return posts.map(mapPost);
 }
 
@@ -157,11 +154,10 @@ export async function fetchForumStats() {
   return requestJson<ForumStats>("/stats/");
 }
 
-export async function createPost(authorId: number, content: string) {
+export async function createPost(content: string) {
   const post = await requestJson<ApiPost>("/posts/create/", {
     method: "POST",
     body: JSON.stringify({
-      author_id: authorId,
       content,
     }),
   });
@@ -169,21 +165,17 @@ export async function createPost(authorId: number, content: string) {
   return mapPost(post);
 }
 
-export async function addComment(
-  postId: string,
-  authorId: number,
-  content: string,
-) {
+export async function addComment(postId: string, content: string) {
   await requestJson<ApiComment>(`/posts/${postId}/comments/`, {
     method: "POST",
-    body: JSON.stringify({ author_id: authorId, content }),
+    body: JSON.stringify({ content }),
   });
 }
 
-export async function likePost(postId: string, authorId: number) {
+export async function likePost(postId: string) {
   const post = await requestJson<ApiPost>(`/posts/${postId}/like/`, {
     method: "POST",
-    body: JSON.stringify({ author_id: authorId }),
+    body: JSON.stringify({}),
   });
 
   return mapPost(post);

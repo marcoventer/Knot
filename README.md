@@ -115,7 +115,7 @@ python -m venv .venv
 # Windows
 .venv\Scripts\activate
 # macOS / Linux
-source .venv/bin/activate
+# source .venv/bin/activate
 
 # Install Python dependencies
 pip install -r requirements.txt
@@ -183,13 +183,13 @@ All endpoints are prefixed with `/api/`. Session cookies are used for authentica
 
 ### Posts
 
-| Method | Endpoint                      | Auth required | Description                                                 |
-| ------ | ----------------------------- | ------------- | ----------------------------------------------------------- |
-| `GET`  | `/api/posts/`                 | No            | List all posts (pass `?user_id=<id>` to include like state) |
-| `POST` | `/api/posts/create/`          | Yes           | Create a post (AI categorisation is triggered here)         |
-| `POST` | `/api/posts/<id>/comments/`   | Yes           | Add a comment to a post                                     |
-| `POST` | `/api/posts/<id>/like/`       | Yes           | Toggle a like on a post                                     |
-| `POST` | `/api/posts/<id>/misleading/` | Moderator     | Mark/unmark a post as misleading                            |
+| Method | Endpoint                      | Auth required | Description                                          |
+| ------ | ----------------------------- | ------------- | ---------------------------------------------------- |
+| `GET`  | `/api/posts/`                 | No            | List all posts (like state is inferred from session) |
+| `POST` | `/api/posts/create/`          | Yes           | Create a post (AI categorisation is triggered here)  |
+| `POST` | `/api/posts/<id>/comments/`   | Yes           | Add a comment to a post                              |
+| `POST` | `/api/posts/<id>/like/`       | Yes           | Toggle a like on a post                              |
+| `POST` | `/api/posts/<id>/misleading/` | Moderator     | Mark/unmark a post as misleading                     |
 
 ### Utility
 
@@ -197,7 +197,7 @@ All endpoints are prefixed with `/api/`. Session cookies are used for authentica
 | ------ | -------------------- | ------------- | ------------------------------------------------- |
 | `GET`  | `/api/stats/`        | No            | Forum-wide counts (users, posts, likes, comments) |
 | `GET`  | `/api/users/`        | No            | List all users                                    |
-| `POST` | `/api/users/create/` | No            | Create a user (legacy endpoint)                   |
+| `POST` | `/api/users/create/` | Moderator     | Create a user (legacy endpoint)                   |
 
 #### Example: Register
 
@@ -207,8 +207,7 @@ Content-Type: application/json
 
 {
   "username": "alice",
-  "password": "secret123",
-  "is_staff": false
+  "password": "secret123"
 }
 ```
 
@@ -219,7 +218,6 @@ POST /api/posts/create/
 Content-Type: application/json
 
 {
-  "author_id": 1,
   "content": "What do you think about the new AI chip announcements?"
 }
 ```

@@ -8,11 +8,7 @@ import { motion } from "motion/react";
 import { Link, Lock, User, ArrowRight, UserPlus } from "lucide-react";
 
 interface RegisterProps {
-  onRegister: (
-    username: string,
-    password: string,
-    isStaff: boolean,
-  ) => Promise<void>;
+  onRegister: (username: string, password: string) => Promise<void>;
   onBackToLogin: () => void;
 }
 
@@ -20,7 +16,6 @@ export default function Register({ onRegister, onBackToLogin }: RegisterProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [isStaff, setIsStaff] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,7 +36,7 @@ export default function Register({ onRegister, onBackToLogin }: RegisterProps) {
     setIsSubmitting(true);
 
     try {
-      await onRegister(username, password, isStaff);
+      await onRegister(username, password);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Unable to create account.",
@@ -145,25 +140,6 @@ export default function Register({ onRegister, onBackToLogin }: RegisterProps) {
                   Passwords do not match
                 </p>
               )}
-            </div>
-
-            <div className="flex items-center justify-between px-1 py-1">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
-                Moderator
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsStaff(!isStaff)}
-                className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
-                  isStaff ? "bg-indigo-500" : "bg-white/10"
-                }`}
-              >
-                <div
-                  className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-transform duration-200 ${
-                    isStaff ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
             </div>
 
             <button
