@@ -101,7 +101,7 @@ A **Google Gemini API key** is required for the AI categorisation feature. Obtai
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-username>/Knot.git
+git clone https://github.com/marcoventer/Knot.git
 cd Knot
 ```
 
@@ -232,7 +232,7 @@ Response includes the AI-assigned `category` field.
 
 A full Postman collection covering every endpoint is published publicly:
 
-**[Knot API — Postman Collection](https://www.postman.com/your-postman-link-here)**
+**[Knot API — Postman Collection](https://www.postman.com/marcoventer-3d966b04-7521079/knot-api/overview?sideView=agentMode)**
 
 The collection is organised into four folders: **Auth**, **Posts**, **Comments & Likes**, and **Utility**. Each request includes example request bodies and notes on required fields. Import via **File → Import → Link** in Postman.
 
@@ -248,13 +248,13 @@ The committed `backend/db.sqlite3` is pre-seeded with:
 
 ### Demo credentials
 
-| Username | Password      | Role                        |
-| -------- | ------------- | --------------------------- |
-| `admin`  | `admin123`    | Moderator (`is_staff=true`) |
-| `alice`  | `password123` | Regular user                |
-| `bob`    | `password123` | Regular user                |
-| `carol`  | `password123` | Regular user                |
-| `dave`   | `password123` | Regular user                |
+| Username | Password   | Role                        |
+| -------- | ---------- | --------------------------- |
+| `admin`  | `admin123` | Moderator (`is_staff=true`) |
+| `alice`  | `12345678` | Regular user                |
+| `bob`    | `12345678` | Regular user                |
+| `carol`  | `12345678` | Regular user                |
+| `dave`   | `12345678` | Regular user                |
 
 ---
 
