@@ -43,13 +43,13 @@ React provides a component model that maps naturally onto the forum's UI (post l
 
 When a post is submitted, the backend calls the **Google Gemini API** (`gemini-3.1-flash-lite-preview`) with the post content and a strict prompt asking it to return exactly one category from the predefined set:
 
-| Category | Description |
-|----------|-------------|
-| Tech | Technology, software, hardware |
-| General | General discussion |
-| Q&A | Questions and answers |
-| News | Current events |
-| Nature | Environment, wildlife, outdoors |
+| Category | Description                     |
+| -------- | ------------------------------- |
+| Tech     | Technology, software, hardware  |
+| General  | General discussion              |
+| Q&A      | Questions and answers           |
+| News     | Current events                  |
+| Nature   | Environment, wildlife, outdoors |
 
 The returned category is stored on the `Post` model and returned to the frontend, where it is displayed as a coloured tag on each post card. The frontend also exposes a **filter bar** allowing users to narrow the feed by category.
 
@@ -85,12 +85,12 @@ Knot/
 
 ## Prerequisites
 
-| Tool | Minimum version | Notes |
-|------|----------------|-------|
-| Python | 3.11 | `python --version` |
-| Node.js | 18 | `node --version` |
-| npm | 9 | bundled with Node |
-| Git | any | to clone the repo |
+| Tool    | Minimum version | Notes              |
+| ------- | --------------- | ------------------ |
+| Python  | 3.11            | `python --version` |
+| Node.js | 18              | `node --version`   |
+| npm     | 9               | bundled with Node  |
+| Git     | any             | to clone the repo  |
 
 A **Google Gemini API key** is required for the AI categorisation feature. Obtain one free at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey). The app functions without it (categories default to General).
 
@@ -162,8 +162,8 @@ Copy `backend/.env.example` to `backend/.env` and fill in your values:
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
+| Variable         | Required | Description                                                                          |
+| ---------------- | -------- | ------------------------------------------------------------------------------------ |
 | `GEMINI_API_KEY` | Optional | Google Gemini API key for AI post categorisation. Falls back to "General" if absent. |
 
 ---
@@ -174,30 +174,30 @@ All endpoints are prefixed with `/api/`. Session cookies are used for authentica
 
 ### Authentication
 
-| Method | Endpoint | Auth required | Description |
-|--------|----------|--------------|-------------|
-| `POST` | `/api/auth/register/` | No | Create a new user account |
-| `POST` | `/api/auth/login/` | No | Log in and establish a session |
-| `POST` | `/api/auth/logout/` | No | Destroy the current session |
-| `GET` | `/api/auth/me/` | No | Return the current authenticated user, or `null` |
+| Method | Endpoint              | Auth required | Description                                      |
+| ------ | --------------------- | ------------- | ------------------------------------------------ |
+| `POST` | `/api/auth/register/` | No            | Create a new user account                        |
+| `POST` | `/api/auth/login/`    | No            | Log in and establish a session                   |
+| `POST` | `/api/auth/logout/`   | No            | Destroy the current session                      |
+| `GET`  | `/api/auth/me/`       | No            | Return the current authenticated user, or `null` |
 
 ### Posts
 
-| Method | Endpoint | Auth required | Description |
-|--------|----------|--------------|-------------|
-| `GET` | `/api/posts/` | No | List all posts (pass `?user_id=<id>` to include like state) |
-| `POST` | `/api/posts/create/` | Yes | Create a post (AI categorisation is triggered here) |
-| `POST` | `/api/posts/<id>/comments/` | Yes | Add a comment to a post |
-| `POST` | `/api/posts/<id>/like/` | Yes | Toggle a like on a post |
-| `POST` | `/api/posts/<id>/misleading/` | Moderator | Mark/unmark a post as misleading |
+| Method | Endpoint                      | Auth required | Description                                                 |
+| ------ | ----------------------------- | ------------- | ----------------------------------------------------------- |
+| `GET`  | `/api/posts/`                 | No            | List all posts (pass `?user_id=<id>` to include like state) |
+| `POST` | `/api/posts/create/`          | Yes           | Create a post (AI categorisation is triggered here)         |
+| `POST` | `/api/posts/<id>/comments/`   | Yes           | Add a comment to a post                                     |
+| `POST` | `/api/posts/<id>/like/`       | Yes           | Toggle a like on a post                                     |
+| `POST` | `/api/posts/<id>/misleading/` | Moderator     | Mark/unmark a post as misleading                            |
 
 ### Utility
 
-| Method | Endpoint | Auth required | Description |
-|--------|----------|--------------|-------------|
-| `GET` | `/api/stats/` | No | Forum-wide counts (users, posts, likes, comments) |
-| `GET` | `/api/users/` | No | List all users |
-| `POST` | `/api/users/create/` | No | Create a user (legacy endpoint) |
+| Method | Endpoint             | Auth required | Description                                       |
+| ------ | -------------------- | ------------- | ------------------------------------------------- |
+| `GET`  | `/api/stats/`        | No            | Forum-wide counts (users, posts, likes, comments) |
+| `GET`  | `/api/users/`        | No            | List all users                                    |
+| `POST` | `/api/users/create/` | No            | Create a user (legacy endpoint)                   |
 
 #### Example: Register
 
@@ -248,13 +248,13 @@ The committed `backend/db.sqlite3` is pre-seeded with:
 
 ### Demo credentials
 
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin123` | Moderator (`is_staff=true`) |
-| `alice` | `password123` | Regular user |
-| `bob` | `password123` | Regular user |
-| `carol` | `password123` | Regular user |
-| `dave` | `password123` | Regular user |
+| Username | Password      | Role                        |
+| -------- | ------------- | --------------------------- |
+| `admin`  | `admin123`    | Moderator (`is_staff=true`) |
+| `alice`  | `password123` | Regular user                |
+| `bob`    | `password123` | Regular user                |
+| `carol`  | `password123` | Regular user                |
+| `dave`   | `password123` | Regular user                |
 
 ---
 

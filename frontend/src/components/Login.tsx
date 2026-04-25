@@ -10,9 +10,14 @@ import { Link, Lock, User, ArrowRight } from "lucide-react";
 interface LoginProps {
   onLogin: (username: string, password: string) => Promise<void>;
   onShowRegister: () => void;
+  onGuestAccess: () => void;
 }
 
-export default function Login({ onLogin, onShowRegister }: LoginProps) {
+export default function Login({
+  onLogin,
+  onShowRegister,
+  onGuestAccess,
+}: LoginProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -120,6 +125,12 @@ export default function Login({ onLogin, onShowRegister }: LoginProps) {
               className="text-slate-400 hover:text-indigo-400 text-xs font-semibold transition-colors uppercase tracking-widest flex items-center justify-center gap-2 underline underline-offset-4 decoration-white/10"
             >
               New here? Create an account
+            </button>
+            <button
+              onClick={onGuestAccess}
+              className="text-slate-500 hover:text-slate-300 text-xs font-semibold transition-colors uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              Continue as Guest
             </button>
           </div>
         </div>

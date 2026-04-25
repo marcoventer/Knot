@@ -20,6 +20,7 @@ import { Post, User as UserType } from "../types";
 interface PostCardProps {
   post: Post;
   currentUser: UserType | null;
+  isGuest?: boolean;
   onLike: (postId: string) => void;
   onFlag: (postId: string) => void;
   onUnflag: (postId: string) => void;
@@ -29,6 +30,7 @@ interface PostCardProps {
 const PostCard: React.FC<PostCardProps> = ({
   post,
   currentUser,
+  isGuest = false,
   onLike,
   onFlag,
   onUnflag,
@@ -119,13 +121,19 @@ const PostCard: React.FC<PostCardProps> = ({
           <div className="flex items-center gap-6">
             <button
               onClick={handleLike}
-              disabled={isOwnPost}
-              title={isOwnPost ? "You cannot like your own post" : undefined}
+              disabled={isOwnPost || isGuest}
+              title={
+                isGuest
+                  ? "Sign in to like posts"
+                  : isOwnPost
+                    ? "You cannot like your own post"
+                    : undefined
+              }
               className={`flex items-center gap-1.5 transition-all text-xs ${
                 post.liked_by_user
                   ? "text-rose-400 hover:text-slate-400"
                   : "text-slate-400 hover:text-rose-400"
-              } ${isOwnPost ? "opacity-50 cursor-not-allowed" : ""}`}
+              } ${isOwnPost || isGuest ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Heart
                 size={14}
@@ -178,7 +186,7 @@ const PostCard: React.FC<PostCardProps> = ({
               className="overflow-hidden"
             >
               <div className="mt-3 flex flex-col gap-3 pl-4 border-l border-white/10">
-                {currentUser && (
+                {currentUser && !isGuest && (
                   <form
                     onSubmit={handleCommentSubmit}
                     className="flex gap-2 mb-2"
@@ -198,6 +206,11 @@ const PostCard: React.FC<PostCardProps> = ({
                       Post
                     </button>
                   </form>
+                )}
+                {isGuest && (
+                  <p className="text-[10px] text-slate-500 italic">
+                    Sign in to leave a comment.
+                  </p>
                 )}
 
                 {post.comments.map((comment) => (

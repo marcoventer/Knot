@@ -39,6 +39,7 @@ import {
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [authView, setAuthView] = useState<"login" | "register">("login");
   const [posts, setPosts] = useState<Post[]>([]);
   const [activeView, setActiveView] = useState<"feed" | "my-knots">("feed");
@@ -226,6 +227,12 @@ export default function App() {
   const handleLogout = () => {
     void logoutUser();
     setCurrentUser(null);
+    setIsGuest(false);
+  };
+
+  const handleSignIn = () => {
+    setIsGuest(false);
+    setAuthView("login");
   };
 
   const formatCompactCount = (value: number) =>
@@ -234,7 +241,7 @@ export default function App() {
       maximumFractionDigits: 1,
     }).format(value);
 
-  if (!currentUser) {
+  if (!currentUser && !isGuest) {
     return (
       <>
         <Background />
@@ -242,6 +249,7 @@ export default function App() {
           <Login
             onLogin={handleLogin}
             onShowRegister={() => setAuthView("register")}
+            onGuestAccess={() => setIsGuest(true)}
           />
         ) : (
           <Register
@@ -267,17 +275,28 @@ export default function App() {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center border border-white/20">
-              <span className="text-xs font-bold text-white">
-                {currentUser.username.charAt(0)}
-              </span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors bg-white/5 rounded-full border border-white/10"
-            >
-              <LogOut size={16} />
-            </button>
+            {currentUser ? (
+              <>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center border border-white/20">
+                  <span className="text-xs font-bold text-white">
+                    {currentUser.username.charAt(0)}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors bg-white/5 rounded-full border border-white/10"
+                >
+                  <LogOut size={16} />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="text-xs font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest border border-indigo-500/30 px-3 py-1.5 rounded-lg hover:bg-indigo-500/10 transition-all"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </header>
 
@@ -309,51 +328,64 @@ export default function App() {
               />
               Feed
             </button>
-            <button
-              onClick={() => setActiveView("my-knots")}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group ${
-                activeView === "my-knots"
-                  ? "bg-white/10 text-white font-medium"
-                  : "hover:bg-white/5 text-slate-400"
-              }`}
-            >
-              <UserIcon
-                className={`w-5 h-5 ${activeView === "my-knots" ? "text-indigo-400" : ""}`}
-              />
-              My Knots
-            </button>
-            <button
-              onClick={() => setIsNewKnotModalOpen(true)}
-              className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 text-slate-400 transition-all"
-            >
-              <Plus className="w-5 h-5" />
-              New Knot
-            </button>
+            {!isGuest && (
+              <>
+                <button
+                  onClick={() => setActiveView("my-knots")}
+                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all group ${
+                    activeView === "my-knots"
+                      ? "bg-white/10 text-white font-medium"
+                      : "hover:bg-white/5 text-slate-400"
+                  }`}
+                >
+                  <UserIcon
+                    className={`w-5 h-5 ${activeView === "my-knots" ? "text-indigo-400" : ""}`}
+                  />
+                  My Knots
+                </button>
+                <button
+                  onClick={() => setIsNewKnotModalOpen(true)}
+                  className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 text-slate-400 transition-all"
+                >
+                  <Plus className="w-5 h-5" />
+                  New Knot
+                </button>
+              </>
+            )}
           </nav>
 
           <div className="mt-auto">
-            <div className="glass p-4 rounded-xl flex items-center gap-3 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 -z-10" />
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center border border-white/20">
-                <span className="text-sm font-bold text-white">
-                  {currentUser.username.charAt(0)}
-                </span>
+            {currentUser ? (
+              <div className="glass p-4 rounded-xl flex items-center gap-3 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 -z-10" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center border border-white/20">
+                  <span className="text-sm font-bold text-white">
+                    {currentUser.username.charAt(0)}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold truncate text-white">
+                    {currentUser.username}
+                  </p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-tighter">
+                    {currentUser.isStaff ? "Moderator" : "Community Member"}
+                  </p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-slate-500 hover:text-white transition-colors p-1"
+                >
+                  <LogOut size={14} />
+                </button>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate text-white">
-                  {currentUser.username}
-                </p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-tighter">
-                  {currentUser.isStaff ? "Moderator" : "Community Member"}
-                </p>
-              </div>
+            ) : (
               <button
-                onClick={handleLogout}
-                className="text-slate-500 hover:text-white transition-colors p-1"
+                onClick={handleSignIn}
+                className="w-full glass p-4 rounded-xl flex items-center justify-center gap-2 text-indigo-400 hover:text-indigo-300 border border-indigo-500/20 hover:bg-indigo-500/10 transition-all text-xs font-bold uppercase tracking-widest"
               >
-                <LogOut size={14} />
+                Sign In
               </button>
-            </div>
+            )}
           </div>
         </aside>
 
@@ -423,6 +455,7 @@ export default function App() {
                         key={post.id}
                         post={post}
                         currentUser={currentUser}
+                        isGuest={isGuest}
                         onLike={handleLike}
                         onFlag={handleFlag}
                         onUnflag={handleUnflag}
