@@ -3,121 +3,429 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Knot Forum API</title>
+    <title>Knot API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      :root {
-        --bg: #f6f7fb;
-        --card: #ffffff;
-        --text: #1f2937;
-        --muted: #6b7280;
-        --primary: #0f766e;
-        --border: #e5e7eb;
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
       }
 
       body {
         margin: 0;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(
-          140deg,
-          #ecfeff 0%,
-          var(--bg) 55%,
-          #f8fafc 100%
-        );
-        color: var(--text);
+        min-height: 100vh;
+        background: #0f1115;
+        color: #e2e8f0;
+        font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
       }
 
+      /* ── Blobs ── */
+      .blob-wrap {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .blob {
+        position: absolute;
+        border-radius: 9999px;
+      }
+      .blob-1 {
+        top: -10%;
+        right: 10%;
+        width: 420px;
+        height: 420px;
+        background: rgba(30, 58, 138, 0.22);
+        filter: blur(100px);
+      }
+      .blob-2 {
+        bottom: 5%;
+        left: 10%;
+        width: 320px;
+        height: 320px;
+        background: rgba(51, 65, 85, 0.22);
+        filter: blur(80px);
+      }
+      .blob-3 {
+        top: 35%;
+        right: 22%;
+        width: 300px;
+        height: 300px;
+        background: rgba(49, 46, 129, 0.12);
+        filter: blur(80px);
+      }
+
+      /* ── Layout ── */
       .container {
-        max-width: 800px;
-        margin: 48px auto;
-        padding: 0 16px;
+        position: relative;
+        z-index: 1;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 56px 20px 80px;
       }
 
-      .card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 24px;
-        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+      /* ── Hero ── */
+      .hero {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
       }
-
+      .knot-icon {
+        font-size: 2.4rem;
+        line-height: 1;
+        transform: rotate(45deg);
+        color: #818cf8;
+      }
       h1 {
-        margin-top: 0;
-        margin-bottom: 10px;
-        color: var(--primary);
-        font-size: 2rem;
+        margin: 0;
+        font-size: 2.6rem;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        font-style: italic;
+        color: #fff;
+      }
+      .subtitle {
+        margin: 0 0 40px;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        padding-left: 4px;
       }
 
-      h2 {
-        margin: 22px 0 10px;
-        font-size: 1.15rem;
+      /* ── Glass card ── */
+      .card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 14px;
+        padding: 28px 32px;
+        margin-bottom: 20px;
       }
 
-      p {
+      .card-title {
+        margin: 0 0 18px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #818cf8;
+      }
+
+      /* ── Callout ── */
+      .callout {
+        background: rgba(99, 102, 241, 0.08);
+        border: 1px solid rgba(99, 102, 241, 0.22);
+        border-radius: 10px;
+        padding: 14px 18px;
+        font-size: 0.875rem;
+        color: #c7d2fe;
         line-height: 1.6;
-        margin: 8px 0;
+        margin-bottom: 20px;
       }
-
-      ul {
-        margin: 8px 0 0;
-        padding-left: 20px;
+      .callout strong {
+        color: #e0e7ff;
       }
-
-      li {
-        margin: 6px 0;
-      }
-
       code {
-        background: #f1f5f9;
-        border: 1px solid #e2e8f0;
-        padding: 2px 6px;
-        border-radius: 6px;
-        font-size: 0.95em;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1px 6px;
+        border-radius: 5px;
+        font-size: 0.85em;
+        color: #a5b4fc;
       }
 
-      .muted {
-        color: var(--muted);
+      /* ── Endpoint table ── */
+      .ep-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .ep-table th {
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #475569;
+        padding: 0 10px 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      }
+      .ep-table td {
+        padding: 11px 10px 11px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 0.875rem;
+        vertical-align: middle;
+      }
+      .ep-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      /* Method badges */
+      .badge {
+        display: inline-block;
+        padding: 2px 9px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
+      }
+      .badge-get {
+        background: rgba(59, 130, 246, 0.15);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        color: #93c5fd;
+      }
+      .badge-post {
+        background: rgba(99, 102, 241, 0.15);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        color: #a5b4fc;
+      }
+
+      /* Auth labels */
+      .auth-none {
+        color: #475569;
+        font-size: 0.78rem;
+      }
+      .auth-req {
+        color: #818cf8;
+        font-size: 0.78rem;
+      }
+      .auth-mod {
+        color: #fbbf24;
+        font-size: 0.78rem;
+      }
+
+      .ep-url {
+        color: #e2e8f0;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 0.82rem;
+      }
+      .ep-desc {
+        color: #94a3b8;
+      }
+
+      /* ── Postman button ── */
+      .postman-wrap {
+        text-align: center;
+        margin-top: 32px;
+      }
+      .btn-postman {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(99, 102, 241, 0.15);
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        color: #c7d2fe;
+        text-decoration: none;
+        padding: 11px 24px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        font-family: inherit;
+        transition:
+          background 0.18s,
+          border-color 0.18s;
+      }
+      .btn-postman:hover {
+        background: rgba(99, 102, 241, 0.28);
+        border-color: rgba(99, 102, 241, 0.55);
+        color: #e0e7ff;
+      }
+
+      /* ── Responsive ── */
+      @media (max-width: 540px) {
+        h1 {
+          font-size: 2rem;
+        }
+        .card {
+          padding: 20px 16px;
+        }
+        .ep-table th:nth-child(4),
+        .ep-table td:nth-child(4) {
+          display: none;
+        }
       }
     </style>
   </head>
   <body>
+    <div class="blob-wrap">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+    </div>
+
     <main class="container">
-      <section class="card">
-        <h1>Knot Forum API</h1>
-        <p class="muted">
-          A small, authenticated text-forum backend for posts, comments, and
-          likes.
-        </p>
+      <div class="hero">
+        <span class="knot-icon">&#128279;</span>
+        <h1>Knot</h1>
+      </div>
+      <p class="subtitle">
+        REST API &mdash; Django backend &bull; Session-based auth &bull; AI post
+        categorisation
+      </p>
 
-        <h2>What This API Supports</h2>
-        <ul>
-          <li>User authentication with password login.</li>
-          <li>Create and view forum posts and comments.</li>
-          <li>
-            Like posts (one like per user, and users cannot like their own
-            posts).
-          </li>
-          <li>Moderator flagging for misleading or false information.</li>
-          <li>
-            AI-enhanced forum capability (based on the selected extension
-            option).
-          </li>
-        </ul>
+      <div class="callout">
+        <strong>Authentication:</strong> All endpoints use session cookies. Call
+        <code>POST /api/auth/login/</code> first, then include
+        <code>credentials: "include"</code> (or equivalent) on every subsequent
+        request. The session cookie is set automatically by Django.
+      </div>
 
-        <h2>Quick Start</h2>
-        <p>
-          Use the API from your frontend or tools like Postman. Anonymous users
-          can view public content, while posting, commenting, and liking require
-          authentication.
-        </p>
+      <!-- Auth -->
+      <div class="card">
+        <p class="card-title">Authentication</p>
+        <table class="ep-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/auth/register/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">Create a new user account</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/auth/login/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">Log in and establish a session</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/auth/logout/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">Destroy the current session</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-get">GET</span></td>
+              <td class="ep-url">/api/auth/me/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">
+                Return the authenticated user or <code>null</code>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <h2>Example Endpoint</h2>
-        <p><code>GET /api/hello/</code> returns a basic API health message.</p>
+      <!-- Posts -->
+      <div class="card">
+        <p class="card-title">Posts</p>
+        <table class="ep-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-get">GET</span></td>
+              <td class="ep-url">/api/posts/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">
+                List all posts &mdash; pass <code>?user_id=&lt;id&gt;</code> to
+                include like state
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/posts/create/</td>
+              <td class="auth-req">Required</td>
+              <td class="ep-desc">
+                Create a post &mdash; AI categorisation is triggered
+                automatically
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/posts/&lt;id&gt;/comments/</td>
+              <td class="auth-req">Required</td>
+              <td class="ep-desc">Add a comment to a post</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/posts/&lt;id&gt;/like/</td>
+              <td class="auth-req">Required</td>
+              <td class="ep-desc">
+                Toggle a like on a post (cannot like own posts)
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/posts/&lt;id&gt;/misleading/</td>
+              <td class="auth-mod">Moderator</td>
+              <td class="ep-desc">Mark or unmark a post as misleading</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-        <p class="muted">
-          If you can see this page, the backend is running and template
-          rendering is configured correctly.
-        </p>
-      </section>
+      <!-- Utility -->
+      <div class="card">
+        <p class="card-title">Utility</p>
+        <table class="ep-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Endpoint</th>
+              <th>Auth</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-get">GET</span></td>
+              <td class="ep-url">/api/stats/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">
+                Forum-wide counts: users, posts, likes, comments
+              </td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-get">GET</span></td>
+              <td class="ep-url">/api/users/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">List all users ordered by username</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-post">POST</span></td>
+              <td class="ep-url">/api/users/create/</td>
+              <td class="auth-none">—</td>
+              <td class="ep-desc">Create or retrieve a user by username</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="postman-wrap">
+        <a
+          href="https://www.postman.com/marcoventer-3d966b04-7521079/knot-api/overview?sideView=agentMode"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn-postman"
+        >
+          &#128196;&nbsp; Open Postman Collection
+        </a>
+      </div>
     </main>
   </body>
 </html>
