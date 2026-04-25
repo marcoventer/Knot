@@ -16,6 +16,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from google import genai
 import os
+from django.conf import settings
 
 from .models import Comment, Like, Post
 
@@ -47,7 +48,7 @@ def categorize_post(post_title: str, post_content: str) -> str:
     )
 
     try:
-        client = genai.Client(api_key="AIzaSyCXK7a6LlUBd2wOYE2_R7aY9E14kwq4M4Y")
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
         response = client.models.generate_content(
             model="gemini-3-flash-preview",
             contents=prompt,
