@@ -35,11 +35,13 @@ const PostCard: React.FC<PostCardProps> = ({
   onComment,
 }) => {
   const [isCommentsExpanded, setIsCommentsExpanded] = useState(false);
-  const [localLiked, setLocalLiked] = useState(false);
   const [newComment, setNewComment] = useState("");
+  const isOwnPost =
+    !!currentUser &&
+    currentUser.username.toLowerCase() === post.author.toLowerCase();
 
   const handleLike = () => {
-    setLocalLiked(!localLiked);
+    if (isOwnPost) return;
     onLike(post.id);
   };
 
@@ -117,16 +119,19 @@ const PostCard: React.FC<PostCardProps> = ({
           <div className="flex items-center gap-6">
             <button
               onClick={handleLike}
+              disabled={isOwnPost}
+              title={isOwnPost ? "You cannot like your own post" : undefined}
               className={`flex items-center gap-1.5 transition-all text-xs ${
-                localLiked
-                  ? "text-rose-400"
+                post.liked_by_user
+                  ? "text-rose-400 hover:text-slate-400"
                   : "text-slate-400 hover:text-rose-400"
-              }`}
+              } ${isOwnPost ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              <Heart size={14} fill={localLiked ? "currentColor" : "none"} />
-              <span className="font-bold">
-                {post.likes + (localLiked ? 1 : 0)} Likes
-              </span>
+              <Heart
+                size={14}
+                fill={post.liked_by_user ? "currentColor" : "none"}
+              />
+              <span className="font-bold">{post.likes} Likes</span>
             </button>
 
             <button

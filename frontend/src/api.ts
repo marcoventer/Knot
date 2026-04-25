@@ -24,6 +24,7 @@ type ApiPost = {
   is_misleading: boolean;
   created_at: string;
   likes: number;
+  liked_by_user: boolean;
   comments: ApiComment[];
 };
 
@@ -37,14 +38,6 @@ export type ForumStats = {
 const API_BASE = "/api";
 
 const CATEGORY_MAP: Record<string, PostCategory> = {
-  Tech: "Tech",
-  General: "General",
-  "Q&A": "Q&A",
-  News: "News",
-  Nature: "Nature",
-};
-
-const CATEGORY_TO_BACKEND: Record<PostCategory, string> = {
   Tech: "Tech",
   General: "General",
   "Q&A": "Q&A",
@@ -86,6 +79,7 @@ function mapPost(post: ApiPost): Post {
     timestamp: formatTimestamp(post.created_at),
     category: CATEGORY_MAP[post.category] ?? "General",
     likes: post.likes,
+    liked_by_user: post.liked_by_user,
     is_misleading: post.is_misleading,
     comments: post.comments.map(mapComment),
   };
@@ -153,8 +147,9 @@ export async function logoutUser() {
   });
 }
 
-export async function fetchPosts() {
-  const posts = await requestJson<ApiPost[]>("/posts/");
+export async function fetchPosts(userId?: number) {
+  const url = userId !== undefined ? `/posts/?user_id=${userId}` : "/posts/";
+  const posts = await requestJson<ApiPost[]>(url);
   return posts.map(mapPost);
 }
 
@@ -162,17 +157,12 @@ export async function fetchForumStats() {
   return requestJson<ForumStats>("/stats/");
 }
 
-export async function createPost(
-  authorId: number,
-  content: string,
-  category: PostCategory,
-) {
+export async function createPost(authorId: number, content: string) {
   const post = await requestJson<ApiPost>("/posts/create/", {
     method: "POST",
     body: JSON.stringify({
       author_id: authorId,
       content,
-      category: CATEGORY_TO_BACKEND[category],
     }),
   });
 

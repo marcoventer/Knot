@@ -19,6 +19,7 @@ export interface Post {
   timestamp: string;
   category: PostCategory;
   likes: number;
+  liked_by_user: boolean;
   is_misleading: boolean;
   comments: Comment[];
 }

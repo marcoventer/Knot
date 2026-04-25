@@ -47,9 +47,8 @@ export default function App() {
   >("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isNewKnotModalOpen, setIsNewKnotModalOpen] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [newKnotContent, setNewKnotContent] = useState("");
-  const [newKnotCategory, setNewKnotCategory] =
-    useState<PostCategory>("General");
   const [forumStats, setForumStats] = useState({
     users: 0,
     posts: 0,
@@ -67,32 +66,34 @@ export default function App() {
   };
 
   useEffect(() => {
-    const loadSessionUser = async () => {
+    const init = async () => {
+      let userId: number | undefined;
       try {
         const user = await fetchCurrentUser();
         setCurrentUser(user);
+        userId = user?.id;
       } catch {
         setCurrentUser(null);
       }
-    };
-
-    const loadPosts = async () => {
       try {
-        const apiPosts = await fetchPosts();
+        const apiPosts = await fetchPosts(userId);
         setPosts(apiPosts);
       } catch {
         setPosts([]);
       }
     };
 
-    void loadSessionUser();
-    void loadPosts();
+    void init();
     void refreshForumStats();
   }, []);
 
   const handleLogin = async (username: string, password: string) => {
     const backendUser = await loginUser({ username, password });
     setCurrentUser(backendUser);
+    try {
+      const apiPosts = await fetchPosts(backendUser.id);
+      setPosts(apiPosts);
+    } catch {}
   };
 
   const handleRegister = async (
@@ -103,6 +104,10 @@ export default function App() {
     const backendUser = await registerUser({ username, password, isStaff });
     setCurrentUser(backendUser);
     void refreshForumStats();
+    try {
+      const apiPosts = await fetchPosts(backendUser.id);
+      setPosts(apiPosts);
+    } catch {}
   };
 
   // Filter posts based on active view, category, and search query
@@ -120,6 +125,14 @@ export default function App() {
   const handleLike = async (postId: string) => {
     if (!currentUser?.id) return;
 
+    const targetPost = posts.find((post) => post.id === postId);
+    if (
+      targetPost &&
+      targetPost.author.toLowerCase() === currentUser.username.toLowerCase()
+    ) {
+      return;
+    }
+
     try {
       const updatedPost = await likePost(postId, currentUser.id);
       setPosts((prev) =>
@@ -135,7 +148,11 @@ export default function App() {
     try {
       const updatedPost = await setPostMisleading(postId, true);
       setPosts((prev) =>
-        prev.map((post) => (post.id === postId ? updatedPost : post)),
+        prev.map((post) =>
+          post.id === postId
+            ? { ...updatedPost, liked_by_user: post.liked_by_user }
+            : post,
+        ),
       );
       void refreshForumStats();
     } catch {
@@ -147,7 +164,11 @@ export default function App() {
     try {
       const updatedPost = await setPostMisleading(postId, false);
       setPosts((prev) =>
-        prev.map((post) => (post.id === postId ? updatedPost : post)),
+        prev.map((post) =>
+          post.id === postId
+            ? { ...updatedPost, liked_by_user: post.liked_by_user }
+            : post,
+        ),
       );
       void refreshForumStats();
     } catch {
@@ -185,22 +206,21 @@ export default function App() {
   };
 
   const handleCreatePost = async () => {
-    if (!newKnotContent.trim() || !currentUser?.id) return;
+    if (!newKnotContent.trim() || !currentUser?.id || isCreatingPost) return;
+
+    setIsCreatingPost(true);
 
     try {
-      const createdPost = await createPost(
-        currentUser.id,
-        newKnotContent,
-        newKnotCategory,
-      );
+      const createdPost = await createPost(currentUser.id, newKnotContent);
       setPosts((prev) => [createdPost, ...prev]);
       void refreshForumStats();
+      setNewKnotContent("");
+      setIsNewKnotModalOpen(false);
     } catch {
       // Ignore transient API errors and keep the UI responsive.
+    } finally {
+      setIsCreatingPost(false);
     }
-
-    setNewKnotContent("");
-    setIsNewKnotModalOpen(false);
   };
 
   const handleLogout = () => {
@@ -578,7 +598,11 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsNewKnotModalOpen(false)}
+              onClick={() => {
+                if (!isCreatingPost) {
+                  setIsNewKnotModalOpen(false);
+                }
+              }}
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
             />
             <motion.div
@@ -598,6 +622,7 @@ export default function App() {
                 </div>
                 <button
                   onClick={() => setIsNewKnotModalOpen(false)}
+                  disabled={isCreatingPost}
                   className="p-2 hover:bg-white/5 rounded-full text-slate-400 transition-colors"
                 >
                   <X size={20} />
@@ -605,35 +630,6 @@ export default function App() {
               </div>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-black mb-2">
-                    Category
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {(
-                      [
-                        "Tech",
-                        "General",
-                        "Q&A",
-                        "News",
-                        "Nature",
-                      ] as PostCategory[]
-                    ).map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => setNewKnotCategory(cat)}
-                        className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
-                          newKnotCategory === cat
-                            ? "bg-indigo-500 text-white"
-                            : "bg-white/5 text-slate-400 hover:bg-white/10"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-black mb-2">
                     Content
@@ -644,15 +640,23 @@ export default function App() {
                     placeholder="What's on your mind?"
                     className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all h-32 resize-none"
                   />
+                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-2">
+                    Category is assigned automatically by AI.
+                  </p>
                 </div>
 
                 <button
                   onClick={handleCreatePost}
-                  disabled={!newKnotContent.trim()}
+                  disabled={!newKnotContent.trim() || isCreatingPost}
                   className="w-full py-4 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:hover:bg-indigo-500 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-lg shadow-indigo-500/20"
                 >
-                  Post Knot
+                  {isCreatingPost ? "Thinking..." : "Post Knot"}
                 </button>
+                {isCreatingPost && (
+                  <p className="text-center text-[10px] uppercase tracking-widest text-indigo-300 animate-pulse">
+                    Thinking... categorizing your post
+                  </p>
+                )}
               </div>
             </motion.div>
           </div>

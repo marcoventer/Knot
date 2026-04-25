@@ -14,6 +14,8 @@ from rest_framework.decorators import (
 )
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from google import genai
+import os
 
 from .models import Comment, Like, Post
 
@@ -29,6 +31,31 @@ BACKEND_TO_FRONTEND_CATEGORY = {
 FRONTEND_TO_BACKEND_CATEGORY = {
     label: code for code, label in BACKEND_TO_FRONTEND_CATEGORY.items()
 }
+
+
+def categorize_post(post_title: str, post_content: str) -> str:
+    allowed_categories = {"Tech", "General", "Q&A", "News", "Nature"}
+
+    prompt = (
+        "You are a forum post classifier. "
+        "Choose exactly one category from this list only: "
+        "Tech, General, Q&A, News, Nature. "
+        "Return ONLY the exact category name as plain text. "
+        "No markdown, no punctuation, no explanation, and no extra words.\n\n"
+        f"Post Title: {post_title}\n"
+        f"Post Content: {post_content}"
+    )
+
+    try:
+        client = genai.Client(api_key="AIzaSyCXK7a6LlUBd2wOYE2_R7aY9E14kwq4M4Y")
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview",
+            contents=prompt,
+        )
+        category = response.text.strip()
+        return category if category in allowed_categories else "General"
+    except Exception:
+        return "General"
 
 
 def serialize_user(user):
@@ -50,8 +77,13 @@ def serialize_comment(comment):
     }
 
 
-def serialize_post(post):
+def serialize_post(post, viewer_user_id=None):
     comments = post.comments.select_related("author").order_by("created_at")
+    liked_by_user = (
+        any(like.user_id == viewer_user_id for like in post.post_likes.all())
+        if viewer_user_id is not None
+        else False
+    )
     return {
         "id": post.id,
         "author_id": post.author_id,
@@ -61,6 +93,7 @@ def serialize_post(post):
         "is_misleading": post.is_misleading,
         "created_at": post.created_at.isoformat(),
         "likes": post.post_likes.count(),
+        "liked_by_user": liked_by_user,
         "comments": [serialize_comment(comment) for comment in comments],
     }
 
@@ -179,7 +212,11 @@ def posts_list(request):
         .prefetch_related("comments__author", "post_likes")
         .order_by("-created_at")
     )
-    return Response([serialize_post(post) for post in posts])
+    user_id_param = request.query_params.get("user_id")
+    viewer_id = (
+        int(user_id_param) if user_id_param and user_id_param.isdigit() else None
+    )
+    return Response([serialize_post(post, viewer_id) for post in posts])
 
 
 @api_view(["POST"])
@@ -188,18 +225,21 @@ def posts_list(request):
 def posts_create(request):
     author_id = request.data.get("author_id")
     content = (request.data.get("content") or "").strip()
-    category = request.data.get("category") or "General"
+    post_title = (request.data.get("title") or "").strip()
 
     if not author_id:
         return Response({"detail": "author_id is required"}, status=400)
     if not content:
         return Response({"detail": "content is required"}, status=400)
 
+    category_label = categorize_post(post_title=post_title, post_content=content)
+    category_code = FRONTEND_TO_BACKEND_CATEGORY.get(category_label, "GENERAL")
+
     author = get_object_or_404(User, pk=author_id)
     post = Post.objects.create(
         author=author,
         content=content,
-        category=FRONTEND_TO_BACKEND_CATEGORY.get(category, category),
+        category=category_code,
     )
     return Response(serialize_post(post), status=201)
 
@@ -233,8 +273,12 @@ def post_like(request, post_id):
         return Response({"detail": "author_id is required"}, status=400)
 
     user = get_object_or_404(User, pk=author_id)
-    Like.objects.get_or_create(post=post, user=user)
-    return Response(serialize_post(post))
+    existing = Like.objects.filter(post=post, user=user).first()
+    if existing:
+        existing.delete()
+    else:
+        Like.objects.create(post=post, user=user)
+    return Response(serialize_post(post, int(author_id)))
 
 
 @api_view(["POST"])
