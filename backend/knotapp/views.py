@@ -37,20 +37,17 @@ FRONTEND_TO_BACKEND_CATEGORY = {
 def categorize_post(post_title: str, post_content: str) -> str:
     allowed_categories = {"Tech", "General", "Q&A", "News", "Nature"}
 
-    prompt = (
-        "You are a forum post classifier. "
-        "Choose exactly one category from this list only: "
-        "Tech, General, Q&A, News, Nature. "
-        "Return ONLY the exact category name as plain text. "
-        "No markdown, no punctuation, no explanation, and no extra words.\n\n"
-        f"Post Title: {post_title}\n"
-        f"Post Content: {post_content}"
-    )
+    prompt = f"""Choose the best fitting category for this forum post: Tech, General, Q&A, News, or Nature.
+
+    Return ONLY the exact category name. No markdown, no punctuation, no extra words.
+
+    Title: {post_title}
+    Content: {post_content}"""
 
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-3.1-flash-lite-preview",
             contents=prompt,
         )
         category = response.text.strip()
